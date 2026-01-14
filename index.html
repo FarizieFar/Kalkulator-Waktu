@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Work Time Manager</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 * { box-sizing: border-box; }
 
@@ -26,7 +24,7 @@ body {
   box-shadow: 0 8px 20px rgba(0,0,0,.08);
 }
 
-h2 { text-align: center; margin-bottom: 10px; }
+h2 { text-align: center; margin-bottom: 12px; }
 
 .tabs {
   display: flex;
@@ -101,17 +99,11 @@ li {
   border-radius: 6px;
 }
 
-.total {
+.total, .result {
   margin-top: 12px;
   text-align: center;
   font-size: 17px;
   font-weight: bold;
-}
-
-.export {
-  background: #16a34a;
-  color: white;
-  margin-top: 10px;
 }
 </style>
 </head>
@@ -122,126 +114,108 @@ li {
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="active" onclick="showTab(0)">➕ Jam Manual</button>
-    <button onclick="showTab(1)">⏱️ Durasi Waktu</button>
+    <button class="active" onclick="showTab(0)">➕ Jam Kerja</button>
+    <button onclick="showTab(1)">⏱️ Hitung Durasi</button>
   </div>
 
-  <!-- Manual -->
+  <!-- Feature 1 -->
   <div class="section active">
     <div class="inputs">
       <input type="number" id="mh" placeholder="Jam" min="0">
       <input type="number" id="mm" placeholder="Menit" min="0" max="59">
     </div>
-    <button class="action" onclick="addManual()">Tambah Jam</button>
+    <button class="action" onclick="addManual()">Tambah</button>
     <ul id="manualList"></ul>
+    <div class="total" id="totalManual">Total: 0 Jam 0 Menit</div>
   </div>
 
-  <!-- Duration -->
+  <!-- Feature 2 -->
   <div class="section">
     <div class="inputs">
-      <input type="time" id="start">
-      <input type="time" id="end">
+      <input type="time" id="start" step="1">
+      <input type="time" id="end" step="1">
     </div>
-    <button class="action" onclick="addDuration()">Tambah Durasi</button>
-    <ul id="durationList"></ul>
+    <button class="action" onclick="calculateDuration()">Hitung Durasi</button>
+    <div class="result" id="durationResult">Durasi: -</div>
   </div>
 
-  <div class="total" id="totalAll">Total: 0 Jam 0 Menit</div>
-
-  <button class="action export" onclick="exportPDF()">Export PDF</button>
 </div>
 
 <script>
-let manual = [];
-let duration = [];
-
-window.onload = () => {
-  manual = JSON.parse(localStorage.getItem("manual")) || [];
-  duration = JSON.parse(localStorage.getItem("duration")) || [];
-  render();
-};
+let manual = JSON.parse(localStorage.getItem("manual")) || [];
 
 function save() {
   localStorage.setItem("manual", JSON.stringify(manual));
-  localStorage.setItem("duration", JSON.stringify(duration));
 }
 
 function showTab(i) {
-  document.querySelectorAll(".tabs button").forEach((b, idx) => {
-    b.classList.toggle("active", idx === i);
-  });
-  document.querySelectorAll(".section").forEach((s, idx) => {
-    s.classList.toggle("active", idx === i);
-  });
+  document.querySelectorAll(".tabs button").forEach((b, idx) =>
+    b.classList.toggle("active", idx === i)
+  );
+  document.querySelectorAll(".section").forEach((s, idx) =>
+    s.classList.toggle("active", idx === i)
+  );
 }
 
 function addManual() {
   const h = parseInt(mh.value) || 0;
   const m = parseInt(mm.value) || 0;
   if (!h && !m) return;
+
   manual.push(h * 60 + m);
   mh.value = mm.value = "";
-  save(); render();
-}
-
-function addDuration() {
-  if (!start.value || !end.value) return;
-  const [sh, sm] = start.value.split(":").map(Number);
-  const [eh, em] = end.value.split(":").map(Number);
-  const d = (eh*60+em)-(sh*60+sm);
-  if (d <= 0) return alert("Waktu tidak valid");
-  duration.push({ start: start.value, end: end.value, min: d });
-  start.value = end.value = "";
-  save(); render();
+  save();
+  render();
 }
 
 function render() {
   manualList.innerHTML = "";
-  durationList.innerHTML = "";
   let total = 0;
 
   manual.forEach((m, i) => {
     total += m;
     manualList.innerHTML += `
       <li>${Math.floor(m/60)}j ${m%60}m
-      <button class="delete" onclick="delManual(${i})">✕</button></li>`;
+      <button class="delete" onclick="del(${i})">✕</button></li>`;
   });
 
-  duration.forEach((d, i) => {
-    total += d.min;
-    durationList.innerHTML += `
-      <li>${d.start} - ${d.end} (${Math.floor(d.min/60)}j ${d.min%60}m)
-      <button class="delete" onclick="delDur(${i})">✕</button></li>`;
-  });
-
-  totalAll.innerText =
+  totalManual.innerText =
     `Total: ${Math.floor(total/60)} Jam ${total%60} Menit`;
 }
 
-function delManual(i){ manual.splice(i,1); save(); render(); }
-function delDur(i){ duration.splice(i,1); save(); render(); }
-
-function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 20, total = 0;
-
-  doc.text("Laporan Jam Kerja", 14, y); y+=10;
-
-  manual.forEach((m,i)=>{
-    doc.text(`Manual ${i+1}: ${Math.floor(m/60)}j ${m%60}m`,14,y);
-    y+=8; total+=m;
-  });
-
-  duration.forEach((d,i)=>{
-    doc.text(`Durasi ${i+1}: ${d.start}-${d.end}`,14,y);
-    y+=8; total+=d.min;
-  });
-
-  y+=10;
-  doc.text(`Total: ${Math.floor(total/60)} Jam ${total%60} Menit`,14,y);
-  doc.save("jam-kerja.pdf");
+function del(i) {
+  manual.splice(i,1);
+  save();
+  render();
 }
+
+// Duration calculation (ONE-TIME)
+function calculateDuration() {
+  if (!start.value || !end.value) return;
+
+  const [sh, sm, ss=0] = start.value.split(":").map(Number);
+  const [eh, em, es=0] = end.value.split(":").map(Number);
+
+  const startSec = sh*3600 + sm*60 + ss;
+  const endSec = eh*3600 + em*60 + es;
+
+  if (endSec <= startSec) {
+    durationResult.innerText = "Durasi: waktu tidak valid";
+    return;
+  }
+
+  let diff = endSec - startSec;
+
+  const h = Math.floor(diff / 3600);
+  diff %= 3600;
+  const m = Math.floor(diff / 60);
+  const s = diff % 60;
+
+  durationResult.innerText =
+    `Durasi: ${h} Jam ${m} Menit ${s} Detik`;
+}
+
+render();
 </script>
 
 </body>
