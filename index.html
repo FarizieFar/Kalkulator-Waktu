@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Work Time Tracker</title>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f1f5f9;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: auto;
+      background: white;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .inputs {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .add { background: #2563eb; color: white; }
+    .export { background: #16a34a; color: white; }
+    .clear { background: #ef4444; color: white; }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 16px;
+    }
+
+    li {
+      background: #e0e7ff;
+      padding: 10px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .delete {
+      background: #ef4444;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .total {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>🕒 Work Time Tracker</h2>
+
+  <div class="inputs">
+    <input type="number" id="hours" placeholder="Jam" min="0">
+    <input type="number" id="minutes" placeholder="Menit" min="0" max="59">
+  </div>
+
+  <button class="add" onclick="addSession()">Tambah Sesi</button>
+
+  <ul id="sessionList"></ul>
+
+  <div class="total" id="totalTime">Total: 0 Jam 0 Menit</div>
+
+  <button class="export" onclick="exportPDF()">Export ke PDF</button>
+  <button class="clear" onclick="clearAll()">Hapus Semua</button>
+</div>
+
+<script>
+  let sessions = [];
+
+  // 🔹 Load dari localStorage saat halaman dibuka
+  window.onload = () => {
+    const saved = localStorage.getItem("work_sessions");
+    if (saved) {
+      sessions = JSON.parse(saved);
+      render();
+    }
+  };
+
+  function saveToStorage() {
+    localStorage.setItem("work_sessions", JSON.stringify(sessions));
+  }
+
+  function addSession() {
+    const h = parseInt(hours.value) || 0;
+    const m = parseInt(minutes.value) || 0;
+
+    if (h === 0 && m === 0) return;
+
+    sessions.push({ h, m });
+    hours.value = "";
+    minutes.value = "";
+
+    saveToStorage();
+    render();
+  }
+
+  function deleteSession(i) {
+    sessions.splice(i, 1);
+    saveToStorage();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm("Hapus semua data?")) return;
+    sessions = [];
+    saveToStorage();
+    render();
+  }
+
+  function render() {
+    sessionList.innerHTML = "";
+    let totalMinutes = 0;
+
+    sessions.forEach((s, i) => {
+      totalMinutes += s.h * 60 + s.m;
+      sessionList.innerHTML += `
+        <li>
+          ${s.h} Jam ${s.m} Menit
+          <button class="delete" onclick="deleteSession(${i})">✕</button>
+        </li>
+      `;
+    });
+
+    const th = Math.floor(totalMinutes / 60);
+    const tm = totalMinutes % 60;
+    totalTime.innerText = `Total: ${th} Jam ${tm} Menit`;
+  }
+
+  function exportPDF() {
+    if (sessions.length === 0) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("Laporan Jam Kerja", 14, 20);
+
+    let y = 35;
+    let totalMinutes = 0;
+
+    doc.setFontSize(12);
+    sessions.forEach((s, i) => {
+      doc.text(`${i + 1}. ${s.h} Jam ${s.m} Menit`, 14, y);
+      y += 8;
+      totalMinutes += s.h * 60 + s.m;
+    });
+
+    const th = Math.floor(totalMinutes / 60);
+    const tm = totalMinutes % 60;
+
+    y += 10;
+    doc.setFontSize(14);
+    doc.text(`Total Waktu: ${th} Jam ${tm} Menit`, 14, y);
+
+    doc.save("jam-kerja.pdf");
+  }
+</script>
+
+</body>
+</html>
