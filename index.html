@@ -1,208 +1,247 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Work Time Tracker</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Time Manager</title>
 
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <style>
-    * { box-sizing: border-box; }
+<style>
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f1f5f9;
-      padding: 16px;
-    }
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f1f5f9;
+  padding: 16px;
+}
 
-    .container {
-      max-width: 420px;
-      margin: auto;
-      background: white;
-      padding: 16px;
-      border-radius: 14px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    }
+.container {
+  max-width: 440px;
+  margin: auto;
+  background: white;
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.08);
+}
 
-    h2 {
-      text-align: center;
-      margin-bottom: 16px;
-    }
+h2 { text-align: center; margin-bottom: 10px; }
 
-    .inputs {
-      display: flex;
-      gap: 10px;
-    }
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 
-    input {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #cbd5e1;
-    }
+.tabs button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background: #e5e7eb;
+}
 
-    button {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 10px;
-    }
+.tabs .active {
+  background: #2563eb;
+  color: white;
+}
 
-    .add { background: #2563eb; color: white; }
-    .export { background: #16a34a; color: white; }
-    .clear { background: #ef4444; color: white; }
+.section { display: none; }
+.section.active { display: block; }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 16px;
-    }
+.inputs {
+  display: flex;
+  gap: 10px;
+}
 
-    li {
-      background: #e0e7ff;
-      padding: 10px;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
+input {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+}
 
-    .delete {
-      background: #ef4444;
-      border: none;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 14px;
-    }
+button.action {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
 
-    .total {
-      margin-top: 14px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
+}
+
+li {
+  background: #e0e7ff;
+  padding: 10px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.delete {
+  background: #ef4444;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.total {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.export {
+  background: #16a34a;
+  color: white;
+  margin-top: 10px;
+}
+</style>
 </head>
 <body>
 
 <div class="container">
-  <h2>🕒 Work Time Tracker</h2>
+  <h2>🕒 Work Time Manager</h2>
 
-  <div class="inputs">
-    <input type="number" id="hours" placeholder="Jam" min="0">
-    <input type="number" id="minutes" placeholder="Menit" min="0" max="59">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="active" onclick="showTab(0)">➕ Jam Manual</button>
+    <button onclick="showTab(1)">⏱️ Durasi Waktu</button>
   </div>
 
-  <button class="add" onclick="addSession()">Tambah Sesi</button>
+  <!-- Manual -->
+  <div class="section active">
+    <div class="inputs">
+      <input type="number" id="mh" placeholder="Jam" min="0">
+      <input type="number" id="mm" placeholder="Menit" min="0" max="59">
+    </div>
+    <button class="action" onclick="addManual()">Tambah Jam</button>
+    <ul id="manualList"></ul>
+  </div>
 
-  <ul id="sessionList"></ul>
+  <!-- Duration -->
+  <div class="section">
+    <div class="inputs">
+      <input type="time" id="start">
+      <input type="time" id="end">
+    </div>
+    <button class="action" onclick="addDuration()">Tambah Durasi</button>
+    <ul id="durationList"></ul>
+  </div>
 
-  <div class="total" id="totalTime">Total: 0 Jam 0 Menit</div>
+  <div class="total" id="totalAll">Total: 0 Jam 0 Menit</div>
 
-  <button class="export" onclick="exportPDF()">Export ke PDF</button>
-  <button class="clear" onclick="clearAll()">Hapus Semua</button>
+  <button class="action export" onclick="exportPDF()">Export PDF</button>
 </div>
 
 <script>
-  let sessions = [];
+let manual = [];
+let duration = [];
 
-  // 🔹 Load dari localStorage saat halaman dibuka
-  window.onload = () => {
-    const saved = localStorage.getItem("work_sessions");
-    if (saved) {
-      sessions = JSON.parse(saved);
-      render();
-    }
-  };
+window.onload = () => {
+  manual = JSON.parse(localStorage.getItem("manual")) || [];
+  duration = JSON.parse(localStorage.getItem("duration")) || [];
+  render();
+};
 
-  function saveToStorage() {
-    localStorage.setItem("work_sessions", JSON.stringify(sessions));
-  }
+function save() {
+  localStorage.setItem("manual", JSON.stringify(manual));
+  localStorage.setItem("duration", JSON.stringify(duration));
+}
 
-  function addSession() {
-    const h = parseInt(hours.value) || 0;
-    const m = parseInt(minutes.value) || 0;
+function showTab(i) {
+  document.querySelectorAll(".tabs button").forEach((b, idx) => {
+    b.classList.toggle("active", idx === i);
+  });
+  document.querySelectorAll(".section").forEach((s, idx) => {
+    s.classList.toggle("active", idx === i);
+  });
+}
 
-    if (h === 0 && m === 0) return;
+function addManual() {
+  const h = parseInt(mh.value) || 0;
+  const m = parseInt(mm.value) || 0;
+  if (!h && !m) return;
+  manual.push(h * 60 + m);
+  mh.value = mm.value = "";
+  save(); render();
+}
 
-    sessions.push({ h, m });
-    hours.value = "";
-    minutes.value = "";
+function addDuration() {
+  if (!start.value || !end.value) return;
+  const [sh, sm] = start.value.split(":").map(Number);
+  const [eh, em] = end.value.split(":").map(Number);
+  const d = (eh*60+em)-(sh*60+sm);
+  if (d <= 0) return alert("Waktu tidak valid");
+  duration.push({ start: start.value, end: end.value, min: d });
+  start.value = end.value = "";
+  save(); render();
+}
 
-    saveToStorage();
-    render();
-  }
+function render() {
+  manualList.innerHTML = "";
+  durationList.innerHTML = "";
+  let total = 0;
 
-  function deleteSession(i) {
-    sessions.splice(i, 1);
-    saveToStorage();
-    render();
-  }
+  manual.forEach((m, i) => {
+    total += m;
+    manualList.innerHTML += `
+      <li>${Math.floor(m/60)}j ${m%60}m
+      <button class="delete" onclick="delManual(${i})">✕</button></li>`;
+  });
 
-  function clearAll() {
-    if (!confirm("Hapus semua data?")) return;
-    sessions = [];
-    saveToStorage();
-    render();
-  }
+  duration.forEach((d, i) => {
+    total += d.min;
+    durationList.innerHTML += `
+      <li>${d.start} - ${d.end} (${Math.floor(d.min/60)}j ${d.min%60}m)
+      <button class="delete" onclick="delDur(${i})">✕</button></li>`;
+  });
 
-  function render() {
-    sessionList.innerHTML = "";
-    let totalMinutes = 0;
+  totalAll.innerText =
+    `Total: ${Math.floor(total/60)} Jam ${total%60} Menit`;
+}
 
-    sessions.forEach((s, i) => {
-      totalMinutes += s.h * 60 + s.m;
-      sessionList.innerHTML += `
-        <li>
-          ${s.h} Jam ${s.m} Menit
-          <button class="delete" onclick="deleteSession(${i})">✕</button>
-        </li>
-      `;
-    });
+function delManual(i){ manual.splice(i,1); save(); render(); }
+function delDur(i){ duration.splice(i,1); save(); render(); }
 
-    const th = Math.floor(totalMinutes / 60);
-    const tm = totalMinutes % 60;
-    totalTime.innerText = `Total: ${th} Jam ${tm} Menit`;
-  }
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20, total = 0;
 
-  function exportPDF() {
-    if (sessions.length === 0) return;
+  doc.text("Laporan Jam Kerja", 14, y); y+=10;
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+  manual.forEach((m,i)=>{
+    doc.text(`Manual ${i+1}: ${Math.floor(m/60)}j ${m%60}m`,14,y);
+    y+=8; total+=m;
+  });
 
-    doc.setFontSize(16);
-    doc.text("Laporan Jam Kerja", 14, 20);
+  duration.forEach((d,i)=>{
+    doc.text(`Durasi ${i+1}: ${d.start}-${d.end}`,14,y);
+    y+=8; total+=d.min;
+  });
 
-    let y = 35;
-    let totalMinutes = 0;
-
-    doc.setFontSize(12);
-    sessions.forEach((s, i) => {
-      doc.text(`${i + 1}. ${s.h} Jam ${s.m} Menit`, 14, y);
-      y += 8;
-      totalMinutes += s.h * 60 + s.m;
-    });
-
-    const th = Math.floor(totalMinutes / 60);
-    const tm = totalMinutes % 60;
-
-    y += 10;
-    doc.setFontSize(14);
-    doc.text(`Total Waktu: ${th} Jam ${tm} Menit`, 14, y);
-
-    doc.save("jam-kerja.pdf");
-  }
+  y+=10;
+  doc.text(`Total: ${Math.floor(total/60)} Jam ${total%60} Menit`,14,y);
+  doc.save("jam-kerja.pdf");
+}
 </script>
 
 </body>
